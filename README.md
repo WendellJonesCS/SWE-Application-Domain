@@ -12,8 +12,6 @@ pip install -r requirements.txt
 python app.py
 ```
 
-3. Access the application at: http://127.0.0.1:5000
-
 ## Default Admin Account
 
 - Username: `admin0325`

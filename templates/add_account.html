@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Account{% endblock %}
+
+{% block body %}
+
+<div class="nav">
+    <a href="/accounts">Back to Accounts</a>
+</div>
+
+<h2>Add New Account</h2>
+
+<form method="POST">
+
+    <div class="form-group">
+        <label>Account Name</label>
+        <input type="text" name="account_name" required>
+    </div>
+
+    <div class="form-group">
+        <label>Account Number</label>
+        <input type="number" name="account_number" required>
+    </div>
+
+    <div class="form-group">
+        <label>Category</label>
+        <input type="text" name="category">
+    </div>
+
+    <div class="form-group">
+        <label>Subcategory</label>
+        <input type="text" name="subcategory">
+    </div>
+
+    <div class="form-group">
+        <label>Initial Balance</label>
+        <input type="number" step="0.01" name="balance">
+    </div>
+
+    <button type="submit">Create Account</button>
+
+</form>
+
+{% endblock %}

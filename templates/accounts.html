@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}Chart of Accounts{% endblock %}
+
+{% block body %}
+
+<div class="nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/accounts">Accounts</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<h2>Chart of Accounts</h2>
+
+<form method="GET">
+    <div class="form-group">
+        <input type="text" name="search" placeholder="Search by name or account number">
+    </div>
+    <button type="submit">Search</button>
+    <a href="/accounts/add" class="btn-secondary" style="padding:10px;">Add Account</a>
+</form>
+
+<table>
+    <tr>
+        <th>Account #</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Balance</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for acc in accounts %}
+    <tr>
+        <td>{{ acc.account_number }}</td>
+        <td>
+            <a href="/ledger/{{ acc.account_id }}">
+                {{ acc.account_name }}
+            </a>
+        </td>
+        <td>{{ acc.category }}</td>
+        <td>{{ "{:,.2f}".format(acc.balance) }}</td>
+        <td>
+            <a href="/accounts/edit/{{ acc.account_id }}">Edit</a> |
+            <a href="/accounts/deactivate/{{ acc.account_id }}" class="btn-danger">Deactivate</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

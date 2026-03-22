@@ -1,50 +1,250 @@
 {% extends "layout.html" %}
 
-{% block title %}Chart of Accounts{% endblock %}
+{% block title %}Chart of Accounts - LockBook{% endblock %}
 
 {% block body %}
+<style>
+    .coa-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .filter-bar {
+        background: white;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 130px;
+    }
+    .filter-group label {
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    .filter-group input,
+    .filter-group select {
+        padding: 7px 10px;
+        font-size: 0.9rem;
+        width: 100%;
+    }
+    .filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+    }
+    .btn-sm {
+        padding: 7px 14px;
+        font-size: 0.9rem;
+    }
+    tr.inactive-row {
+        opacity: 0.55;
+        background: #f0f0f0 !important;
+    }
+    tr.inactive-row:hover {
+        opacity: 0.75;
+    }
+    .badge-inactive {
+        display: inline-block;
+        background: #aaa;
+        color: white;
+        font-size: 0.7rem;
+        padding: 2px 7px;
+        border-radius: 10px;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #eaf3fb; }
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #888;
+        font-style: italic;
+    }
+    .admin-actions {
+        display: flex;
+        gap: 8px;
+    }
+</style>
 
 <div class="nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/accounts">Accounts</a>
-    <a href="/logout">Logout</a>
+    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
+    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
+    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
+    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
 </div>
 
-<h2>Chart of Accounts</h2>
-
-<form method="GET">
-    <div class="form-group">
-        <input type="text" name="search" placeholder="Search by name or account number">
+<div class="coa-header">
+    <h2>Chart of Accounts</h2>
+    <div class="admin-actions">
+        {% if current_user.role.role_name == 'ROLE_ADMIN' %}
+        <a href="{{ url_for('accounts_add') }}"
+           title="Add a new account to the chart of accounts">
+            <button class="btn-sm" title="Add a new account">+ Add Account</button>
+        </a>
+        <a href="{{ url_for('accounts_event_log') }}"
+           title="View the full audit event log for all accounts">
+            <button class="btn-sm btn-secondary" title="View event log">Event Log</button>
+        </a>
+        {% endif %}
     </div>
-    <button type="submit">Search</button>
-    <a href="/accounts/add" class="btn-secondary" style="padding:10px;">Add Account</a>
-</form>
+</div>
 
+<!-- Filter / Search Bar -->
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('accounts') }}">
+        <div class="filter-row">
+            <div class="filter-group" style="min-width: 200px;">
+                <label for="search" title="Search by account number or name">Search</label>
+                <input type="text" id="search" name="search" value="{{ search }}"
+                       placeholder="Account # or name…"
+                       title="Enter text to search account numbers or names (case-insensitive)">
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-category" title="Filter by account category">Category</label>
+                <select id="filter-category" name="category"
+                        title="Filter accounts by category">
+                    <option value="">All</option>
+                    <option value="Asset"     {% if category == 'Asset'     %}selected{% endif %}>Asset</option>
+                    <option value="Liability" {% if category == 'Liability' %}selected{% endif %}>Liability</option>
+                    <option value="Equity"    {% if category == 'Equity'    %}selected{% endif %}>Equity</option>
+                    <option value="Revenue"   {% if category == 'Revenue'   %}selected{% endif %}>Revenue</option>
+                    <option value="Expense"   {% if category == 'Expense'   %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-subcategory" title="Filter by subcategory">Subcategory</label>
+                <input type="text" id="filter-subcategory" name="subcategory"
+                       value="{{ subcategory }}" placeholder="e.g. Current Assets"
+                       title="Filter by subcategory text">
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-normal-side" title="Filter by normal side">Normal Side</label>
+                <select id="filter-normal-side" name="normal_side"
+                        title="Filter by Debit or Credit normal side">
+                    <option value="">All</option>
+                    <option value="Debit"  {% if normal_side == 'Debit'  %}selected{% endif %}>Debit</option>
+                    <option value="Credit" {% if normal_side == 'Credit' %}selected{% endif %}>Credit</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-statement" title="Filter by financial statement">Statement</label>
+                <select id="filter-statement" name="statement"
+                        title="Filter by the financial statement this account appears on">
+                    <option value="">All</option>
+                    <option value="BS" {% if statement == 'BS' %}selected{% endif %}>BS</option>
+                    <option value="IS" {% if statement == 'IS' %}selected{% endif %}>IS</option>
+                    <option value="RE" {% if statement == 'RE' %}selected{% endif %}>RE</option>
+                </select>
+            </div>
+
+            <div class="filter-group" style="min-width: 110px;">
+                <label for="filter-balance-min" title="Minimum balance filter">Balance Min</label>
+                <input type="number" id="filter-balance-min" name="balance_min"
+                       value="{{ balance_min }}" step="0.01" placeholder="0.00"
+                       title="Show only accounts with balance ≥ this value">
+            </div>
+
+            <div class="filter-group" style="min-width: 110px;">
+                <label for="filter-balance-max" title="Maximum balance filter">Balance Max</label>
+                <input type="number" id="filter-balance-max" name="balance_max"
+                       value="{{ balance_max }}" step="0.01" placeholder="—"
+                       title="Show only accounts with balance ≤ this value">
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-sm"
+                        title="Apply the current search and filter criteria">Apply</button>
+                <a href="{{ url_for('accounts') }}"
+                   title="Clear all filters and show all accounts">
+                    <button type="button" class="btn-sm btn-secondary">Clear Filters</button>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Accounts Table -->
+{% if accounts %}
 <table>
-    <tr>
-        <th>Account #</th>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Balance</th>
-        <th>Actions</th>
-    </tr>
-
-    {% for acc in accounts %}
-    <tr>
-        <td>{{ acc.account_number }}</td>
-        <td>
-            <a href="/ledger/{{ acc.account_id }}">
-                {{ acc.account_name }}
-            </a>
-        </td>
-        <td>{{ acc.category }}</td>
-        <td>{{ "{:,.2f}".format(acc.balance) }}</td>
-        <td>
-            <a href="/accounts/edit/{{ acc.account_id }}">Edit</a> |
-            <a href="/accounts/deactivate/{{ acc.account_id }}" class="btn-danger">Deactivate</a>
-        </td>
-    </tr>
-    {% endfor %}
+    <thead>
+        <tr>
+            <th title="Unique account number">Account #</th>
+            <th title="Account name">Account Name</th>
+            <th title="Top-level account category">Category</th>
+            <th title="Secondary classification within the category">Subcategory</th>
+            <th title="The side (Debit or Credit) that increases this account">Normal Side</th>
+            <th title="Current running balance">Balance</th>
+            <th title="Financial statement this account appears on">Statement</th>
+            <th title="Whether the account is active or inactive">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for account in accounts %}
+        <tr class="{% if account.is_active == 0 %}inactive-row{% endif %}"
+            data-href="{{ url_for('account_ledger', account_id=account.account_id) }}"
+            style="cursor:pointer;"
+            title="Click to view ledger for {{ account.account_name }}">
+            <td>{{ account.account_number }}</td>
+            <td>
+                <a href="{{ url_for('account_ledger', account_id=account.account_id) }}"
+                   title="View ledger for {{ account.account_name }}"
+                   onclick="event.stopPropagation()">
+                    {{ account.account_name }}
+                </a>
+                {% if account.is_active == 0 %}
+                    <span class="badge-inactive" title="This account is inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{{ account.category }}</td>
+            <td>{{ account.subcategory or '—' }}</td>
+            <td>{{ account.normal_side }}</td>
+            <td>{{ account.current_balance | currency }}</td>
+            <td>{{ account.statement or '—' }}</td>
+            <td>
+                {% if account.is_active == 1 %}
+                    <span style="color: #27ae60;" title="Account is active">Active</span>
+                {% else %}
+                    <span style="color: #aaa;" title="Account is inactive">Inactive</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
+{% else %}
+<div class="empty-state">
+    <p>No matching accounts found.</p>
+</div>
+{% endif %}
 
+<script>
+    // Row click navigates to ledger via data-href (avoids quote conflicts in Jinja onclick)
+    document.querySelectorAll('tr[data-href]').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            if (!e.target.closest('a')) {
+                window.location = row.dataset.href;
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -28,6 +28,23 @@
     {% endif %}
 </div>
 
+<!-- Chart of Accounts quick link (Requirement 13.3) -->
+<div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+    <h3>Accounting</h3>
+    <ul style="list-style: none;">
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('accounts') }}" title="View and manage the chart of accounts">
+                📊 Chart of Accounts
+            </a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="#" title="Journal Entries — coming soon">
+                📒 Journal Entries <span style="color:#aaa; font-size:0.85em;">(coming soon)</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
 {% if user.role.role_name == 'ROLE_ADMIN' %}
 <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
     <h3>Quick Actions</h3>

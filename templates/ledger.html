@@ -1,90 +1,32 @@
 {% extends "layout.html" %}
 
-{% block title %}Ledger: {{ account.account_name }} - LockBook{% endblock %}
+{% block title %}
+Ledger: {{ account.account_name }} - LockBook
+{% endblock %}
 
 {% block body %}
+
 <style>
-    .ledger-header {
-        display: flex;
-        align-items: baseline;
-        gap: 12px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-    .ledger-header h2 {
-        color: #2c3e50;
-        margin: 0;
-    }
-    .ledger-header .account-number {
-        color: #888;
-        font-size: 1rem;
-    }
-    .ledger-meta {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        padding: 16px 20px;
-        margin-bottom: 20px;
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
-    }
-    .ledger-meta .meta-item {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .ledger-meta .meta-label {
-        font-size: 0.75rem;
-        color: #888;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    .ledger-meta .meta-value {
-        font-size: 1rem;
-        color: #2c3e50;
-        font-weight: bold;
-    }
-    .empty-state {
-        text-align: center;
-        padding: 40px;
-        color: #888;
-        font-style: italic;
-    }
-    .action-bar {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-        margin-top: 16px;
-        flex-wrap: wrap;
-    }
+.ledger-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.account-number {
+    color: #888;
+}
 </style>
 
-<div class="nav">
-    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
-    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
-    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
-    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
+<h2>Ledger: {{ account.account_name }}</h2>
+<p>Account #: {{ account.account_number }}</p>
+
+<div>
+    <strong>Category:</strong> {{ account.category }}<br>
+    <strong>Normal Side:</strong> {{ account.normal_side }}<br>
+    <strong>Debit Total:</strong> {{ account.debit_total }}<br>
+    <strong>Credit Total:</strong> {{ account.credit_total }}
 </div>
 
-<div class="ledger-header">
-    <h2>Ledger: {{ account.account_name }}</h2>
-    <span class="account-number">({{ account.account_number }})</span>
-</div>
-
-<!-- Account summary strip -->
-<div class="ledger-meta">
-    <div class="meta-item">
-        <span class="meta-label" title="Account category">Category</span>
-        <span class="meta-value">{{ account.category }}</span>
-    </div>
-    <div class="meta-item">
-        <span class="meta-label" title="Normal side for this account">Normal Side</span>
-        <span class="meta-value">{{ account.normal_side }}</span>
-    </div>
-    <div class="meta-item">
-        <span class="meta-label" title="Total debits posted to this account">Debit Total</span>
-        <span class="meta-value">{{ account.debit_total | currency }}</span>
-    </div>
-    <div class="meta-item">
-        <span class="meta-label" title="Total credits posted to this acco
+{% endblock %}

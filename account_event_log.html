@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+
+{% block title %}Account Event Log - LockBook{% endblock %}
+
+{% block body %}
+<style>
+    .event-log-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .action-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .action-CREATE     { background: #d4edda; color: #155724; }
+    .action-UPDATE     { background: #fff3cd; color: #856404; }
+    .action-DEACTIVATE { background: #f8d7da; color: #721c24; }
+    .json-snippet {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #555;
+        max-width: 220px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: default;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #888;
+        font-style: italic;
+    }
+    .action-bar {
+        margin-top: 16px;
+    }
+</style>
+
+<div class="nav">
+    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
+    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
+    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
+    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
+</div>
+
+<div class="event-log-header">
+    <h2>Account Event Log</h2>
+</div>
+
+{% if logs %}
+<table>
+    <thead>
+        <tr>
+            <th title="Date and time the event was recorded (UTC)">Timestamp</th>
+            <th title="Type of action performed">Action</th>
+            <th title="Account affected by this event">Account</th>
+            <th title="User who performed the action">User</th>
+            <th title="State of the account before the change (first 100 characters)">Before</th>
+            <th title="State of the account after the change (first 100 characters)">After</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td title="{{ log.timestamp }}">
+                {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '—' }}
+            </td>
+            <td>
+                <span class="action-badge action-{{ log.action }}"
+                      title="Action type: {{ log.action }}">
+                    {{ log.action }}
+                </span>
+            </td>
+            <td title="Account: {{ log.account.account_name }} #{{ log.account.account_number }}">
+                {{ log.account.account_name }}
+                ({{ log.account.account_number }})
+            </td>
+            <td title="Performed by {{ log.user.first_name }} {{ log.user.last_name }}">
+                {{ log.user.username }}
+            </td>
+            <td>
+                {% if log.before_image %}
+                    {% set before_text = log.before_image %}
+                    <span class="json-snippet"
+                          title="{{ before_text }}">
+                        {{ before_text[:100] }}{% if before_text|length > 100 %}…{% endif %}
+                    </span>
+                {% else %}
+                    <span style="color:#aaa;" title="No before-image (CREATE event)">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if log.after_image %}
+                    {% set after_text = log.after_image %}
+                    <span class="json-snippet"
+                          title="{{ after_text }}">
+                        {{ after_text[:100] }}{% if after_text|length > 100 %}…{% endif %}
+                    </span>
+                {% else %}
+                    <span style="color:#aaa;">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>No events recorded yet.</p>
+</div>
+{% endif %}
+
+<div class="action-bar">
+    <a href="{{ url_for('accounts') }}"
+       title="Return to the full chart of accounts">
+        ← Back to Chart of Accounts
+    </a>
+</div>
+{% endblock %}

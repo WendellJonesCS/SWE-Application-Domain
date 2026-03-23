@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - LockBook{% endblock %}
+
+{% block body %}
+<div class="nav">
+    <a href="/dashboard">Dashboard</a>
+    {% if user.role.role_name == 'ROLE_ADMIN' %}
+        <a href="/admin/users">Manage Users</a>
+        <a href="/admin/requests">User Requests</a>
+        <a href="/admin/create-user">Create User</a>
+        <a href="/admin/expired-passwords">Expired Passwords</a>
+    {% endif %}
+    <a href="/logout" style="float: right;">Logout</a>
+</div>
+
+<h2>Welcome, {{ user.first_name }} {{ user.last_name }}</h2>
+
+<div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+    <h3>User Information</h3>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Role:</strong> {{ user.role.role_name.replace('ROLE_', '') }}</p>
+    <p><strong>Account Created:</strong> {{ user.account_created_at.strftime('%Y-%m-%d') }}</p>
+
+    {% if user.password_expiry_date %}
+        <p><strong>Password Expires:</strong> {{ user.password_expiry_date.strftime('%Y-%m-%d') }}</p>
+    {% endif %}
+</div>
+
+<!-- Chart of Accounts quick link (Requirement 13.3) -->
+<div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+    <h3>Accounting</h3>
+    <ul style="list-style: none;">
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('accounts') }}" title="View and manage the chart of accounts">
+                📊 Chart of Accounts
+            </a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="#" title="Journal Entries — coming soon">
+                📒 Journal Entries <span style="color:#aaa; font-size:0.85em;">(coming soon)</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+{% if user.role.role_name == 'ROLE_ADMIN' %}
+<div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+    <h3>Quick Actions</h3>
+    <ul style="list-style: none;">
+        <li style="margin: 10px 0;"><a href="/admin/users">View All Users</a></li>
+        <li style="margin: 10px 0;"><a href="/admin/requests">Review User Requests</a></li>
+        <li style="margin: 10px 0;"><a href="/admin/create-user">Create New User</a></li>
+        <li style="margin: 10px 0;"><a href="/admin/expired-passwords">View Expired Passwords</a></li>
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

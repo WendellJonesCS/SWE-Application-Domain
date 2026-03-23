@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Ledger: {{ account.account_name }} - LockBook
+{% endblock %}
+
+{% block body %}
+
+<style>
+.ledger-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.account-number {
+    color: #888;
+}
+</style>
+
+<h2>Ledger: {{ account.account_name }}</h2>
+<p>Account #: {{ account.account_number }}</p>
+
+<div>
+    <strong>Category:</strong> {{ account.category }}<br>
+    <strong>Normal Side:</strong> {{ account.normal_side }}<br>
+    <strong>Debit Total:</strong> {{ account.debit_total }}<br>
+    <strong>Credit Total:</strong> {{ account.credit_total }}
+</div>
+
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Account - LockBook{% endblock %}
+
+{% block body %}
+<style>
+    .form-container {
+        max-width: 680px;
+        margin: 0 auto;
+    }
+    .category-display {
+        margin-top: 6px;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .category-display span {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+    }
+    .hint {
+        font-size: 0.8rem;
+        color: #888;
+        margin-top: 3px;
+    }
+</style>
+
+<div class="nav">
+    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
+    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
+    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
+    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
+</div>
+
+<div class="form-container">
+    <h2 style="margin-bottom: 20px;">Edit Account</h2>
+
+    <form method="POST" action="{{ url_for('account_edit', account_id=account.account_id) }}">
+
+        <div class="form-group">
+            <label for="account_name" title="The unique display name for this account">
+                Account Name <span style="color:red;">*</span>
+            </label>
+            <input type="text" id="account_name" name="account_name"
+                   value="{{ request.form.get('account_name', account.account_name) }}"
+                   required
+                   placeholder="e.g. Cash and Cash Equivalents"
+                   title="Enter a unique name for this account (required)">
+        </div>
+
+        <div class="form-group">
+            <label for="account_number" title="Numeric account identifier; first digit determines category">
+                Account Number <span style="color:red;">*</span>
+            </label>
+            <input type="text" id="account_number" name="account_number"
+                   value="{{ request.form.get('account_number', account.account_number) }}"
+                   required
+                   placeholder="e.g. 10100"
+                   pattern="[1-5][0-9]*"
+                   title="Digits only; must start with 1–5 (1=Asset, 2=Liability, 3=Equity, 4=Revenue, 5=Expense)">
+            <div class="category-display">
+                Category: <span id="category-display">{{ account.category }}</span>
+            </div>
+            <div class="hint">First digit: 1=Asset, 2=Liability, 3=Equity, 4=Revenue, 5=Expense</div>
+        </div>
+
+        <div class="form-group">
+            <label for="description" title="Optional longer description of this account's purpose">
+                Description
+            </label>
+            <textarea id="description" name="description" rows="3"
+                      placeholder="Optional description…"
+                      title="Provide an optional description of this account">{{ request.form.get('description', account.description or '') }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="normal_side" title="The side (Debit or Credit) that increases this account's balance">
+                Normal Side <span style="color:red;">*</span>
+            </label>
+            <select id="normal_side" name="normal_side" required
+                    title="Select whether Debit or Credit increases this account">
+                <option value="" disabled>— Select —</option>
+                {% set ns_val = request.form.get('normal_side', account.normal_side) %}
+                <option value="Debit"  {% if ns_val == 'Debit'  %}selected{% endif %}>Debit</option>
+                <option value="Credit" {% if ns_val == 'Credit' %}selected{% endif %}>Credit</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="subcategory" title="Optional secondary classification (e.g. Current Assets, Fixed Assets)">
+                Subcategory
+            </label>
+            <input type="text" id="subcategory" name="subcategory"
+                   value="{{ request.form.get('subcategory', account.subcategory or '') }}"
+                   placeholder="e.g. Current Assets"
+                   title="Enter an optional subcategory for this account">
+        </div>
+
+        <div class="form-group">
+            <label for="initial_balance" title="The starting balance for this account">
+                Initial Balance <span style="color:red;">*</span>
+            </label>
+            <input type="number" id="initial_balance" name="initial_balance"
+                   value="{{ request.form.get('initial_balance', account.initial_balance) }}"
+                   step="0.01" min="0" required
+                   title="Enter the initial balance (required)">
+        </div>
+
+        <div class="form-group">
+            <label for="display_order" title="Optional numeric ordering hint for display purposes">
+                Display Order
+            </label>
+            <input type="number" id="display_order" name="display_order"
+                   value="{{ request.form.get('display_order', account.display_order or '') }}"
+                   placeholder="e.g. 10"
+                   title="Optional integer to control display ordering">
+        </div>
+
+        <div class="form-group">
+            <label for="statement" title="The financial statement this account appears on">
+                Statement
+            </label>
+            {% set stmt_val = request.form.get('statement', account.statement or '') %}
+            <select id="statement" name="statement"
+                    title="Select the financial statement for this account (BS, IS, or RE)">
+                <option value="">— None —</option>
+                <option value="BS" {% if stmt_val == 'BS' %}selected{% endif %}>BS — Balance Sheet</option>
+                <option value="IS" {% if stmt_val == 'IS' %}selected{% endif %}>IS — Income Statement</option>
+                <option value="RE" {% if stmt_val == 'RE' %}selected{% endif %}>RE — Retained Earnings</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="comment" title="Optional internal comment or note about this account">
+                Comment
+            </label>
+            <textarea id="comment" name="comment" rows="2"
+                      placeholder="Optional internal note…"
+                      title="Add an optional comment or note for this account">{{ request.form.get('comment', account.comment or '') }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" title="Save changes to this account">
+                Save Changes
+            </button>
+            <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
+               title="Discard changes and return to account detail">
+                <button type="button" class="btn-secondary">Cancel</button>
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    const categoryMap = {
+        '1': 'Asset',
+        '2': 'Liability',
+        '3': 'Equity',
+        '4': 'Revenue',
+        '5': 'Expense'
+    };
+
+    function updateCategoryDisplay() {
+        const val = document.getElementById('account_number').value.trim();
+        const display = document.getElementById('category-display');
+        if (val.length > 0 && categoryMap[val[0]]) {
+            display.textContent = categoryMap[val[0]];
+            display.style.color = '#27ae60';
+        } else {
+            display.textContent = '—';
+            display.style.color = '#2c3e50';
+        }
+    }
+
+    document.getElementById('account_number').addEventListener('input', updateCategoryDisplay);
+
+    // Initialize on page load
+    updateCategoryDisplay();
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<h2>Journal Entries</h2>
+
+<form method="GET">
+    <input type="date" name="start">
+    <input type="date" name="end">
+    <input type="text" name="search" placeholder="Search">
+    <button type="submit">Filter</button>
+</form>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Total</th>
+        <th>Action</th>
+    </tr>
+
+    {% for journal in journals %}
+    <tr>
+        <td>{{ journal.date }}</td>
+        <td>{{ journal.status }}</td>
+        <td>{{ journal.total }}</td>
+        <td>
+            <a href="/journal/{{ journal.id }}">View</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

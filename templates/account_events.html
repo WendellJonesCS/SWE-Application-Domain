@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Account Event Log{% endblock %}
+
+{% block body %}
+
+<div class="nav">
+    <a href="/accounts">Back to Accounts</a>
+</div>
+
+<h2>Account Event Log</h2>
+
+<table>
+    <tr>
+        <th>Event ID</th>
+        <th>Account</th>
+        <th>Action</th>
+        <th>Before</th>
+        <th>After</th>
+        <th>User</th>
+        <th>Date</th>
+    </tr>
+
+    {% for event in events %}
+    <tr>
+        <td>{{ event.event_id }}</td>
+        <td>{{ event.account_name }}</td>
+        <td>{{ event.action }}</td>
+
+        <td>
+            <pre>{{ event.before_data }}</pre>
+        </td>
+
+        <td>
+            <pre>{{ event.after_data }}</pre>
+        </td>
+
+        <td>{{ event.user_id }}</td>
+        <td>{{ event.timestamp }}</td>
+    </tr>
+    {% endfor %}
+
+</table>
+
+{% endblock %}

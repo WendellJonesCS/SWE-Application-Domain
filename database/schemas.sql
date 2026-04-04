@@ -117,3 +117,37 @@ CREATE INDEX idx_users_role ON users(role_id);
 CREATE INDEX idx_login_user ON login_attempts(user_id);
 CREATE INDEX idx_password_history_user ON password_history(user_id);
 CREATE INDEX idx_suspension_user ON user_suspensions(user_id);
+
+
+CREATE TABLE accounts (
+    account_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_name    TEXT NOT NULL UNIQUE,
+    account_number  TEXT NOT NULL UNIQUE,
+    description     TEXT,
+    normal_side     TEXT NOT NULL,
+    category        TEXT NOT NULL,
+    subcategory     TEXT,
+    initial_balance NUMERIC(15,2) NOT NULL DEFAULT 0.00,
+    debit_total     NUMERIC(15,2) NOT NULL DEFAULT 0.00,
+    credit_total    NUMERIC(15,2) NOT NULL DEFAULT 0.00,
+    current_balance NUMERIC(15,2) NOT NULL DEFAULT 0.00,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    creator_user_id INTEGER NOT NULL,
+    display_order   INTEGER DEFAULT 0,
+    statement       TEXT,
+    comment         TEXT,
+    is_active       INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (creator_user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE account_event_log (
+    log_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id   INTEGER NOT NULL,
+    user_id      INTEGER NOT NULL,
+    timestamp    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    action       TEXT NOT NULL,
+    before_image TEXT,
+    after_image  TEXT NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (user_id)    REFERENCES users(user_id)
+);

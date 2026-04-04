@@ -85,7 +85,7 @@
 <div class="nav">
     <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
     <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
-    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
+    <a href="{{ url_for('journal_list') }}" title="Journal Entries">Journal Entries</a>
     <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
 </div>
 
@@ -97,11 +97,15 @@
            title="Add a new account to the chart of accounts">
             <button class="btn-sm" title="Add a new account">+ Add Account</button>
         </a>
+        {% endif %}
         <a href="{{ url_for('accounts_event_log') }}"
            title="View the full audit event log for all accounts">
             <button class="btn-sm btn-secondary" title="View event log">Event Log</button>
         </a>
-        {% endif %}
+        <a href="{{ url_for('accounts_send_email') }}"
+           title="Send email to a manager or accountant">
+            <button class="btn-sm btn-secondary">✉ Send Email</button>
+        </a>
     </div>
 </div>
 
@@ -155,20 +159,6 @@
                     <option value="IS" {% if statement == 'IS' %}selected{% endif %}>IS</option>
                     <option value="RE" {% if statement == 'RE' %}selected{% endif %}>RE</option>
                 </select>
-            </div>
-
-            <div class="filter-group" style="min-width: 110px;">
-                <label for="filter-balance-min" title="Minimum balance filter">Balance Min</label>
-                <input type="number" id="filter-balance-min" name="balance_min"
-                       value="{{ balance_min }}" step="0.01" placeholder="0.00"
-                       title="Show only accounts with balance ≥ this value">
-            </div>
-
-            <div class="filter-group" style="min-width: 110px;">
-                <label for="filter-balance-max" title="Maximum balance filter">Balance Max</label>
-                <input type="number" id="filter-balance-max" name="balance_max"
-                       value="{{ balance_max }}" step="0.01" placeholder="—"
-                       title="Show only accounts with balance ≤ this value">
             </div>
 
             <div class="filter-actions">

@@ -80,12 +80,19 @@
         <span>{{ current_user.first_name }} {{ current_user.last_name }}</span>
     </div>
 
-    <!-- Global navigation bar (Requirement 13.3) -->
+    <!-- Global navigation bar -->
     <nav class="nav">
         <a href="/dashboard">Dashboard</a>
         <a href="{{ url_for('accounts') }}">Chart of Accounts</a>
-        <a href="#" title="Coming soon">Journal Entries</a>
-        <a href="/logout" class="nav-right">Logout</a>
+        <a href="{{ url_for('journal_list') }}">Journal Entries</a>
+        <a href="{{ url_for('adjusting_list') }}">Adjusting Entries</a>
+        {% if current_user.role.role_name == 'ROLE_MANAGER' %}
+        <a href="{{ url_for('report_trial_balance') }}">Reports</a>
+        {% endif %}
+        <a href="{{ url_for('notifications') }}" style="margin-left:auto;margin-right:16px;" id="notif-link">
+            🔔 <span id="notif-badge" style="display:none;background:#e74c3c;color:white;border-radius:50%;padding:1px 6px;font-size:0.75rem;"></span>
+        </a>
+        <a href="/logout">Logout</a>
     </nav>
     {% endif %}
 
@@ -135,6 +142,27 @@
         }
         document.getElementById('help-btn').addEventListener('click', toggleHelp);
     </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Poll notification count every 30s
+        function refreshNotifBadge() {
+            fetch('/notifications/count')
+                .then(r => r.json())
+                .then(data => {
+                    var badge = document.getElementById('notif-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+        }
+        refreshNotifBadge();
+        setInterval(refreshNotifBadge, 30000);
+    </script>
+    {% endif %}
 
 </body>
 </html>

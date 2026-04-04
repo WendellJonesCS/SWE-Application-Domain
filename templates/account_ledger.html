@@ -1,32 +1,99 @@
 {% extends "layout.html" %}
-
-{% block title %}
-Ledger: {{ account.account_name }} - LockBook
-{% endblock %}
+{% block title %}Ledger: {{ account.account_name }} - LockBook{% endblock %}
 
 {% block body %}
-
 <style>
-.ledger-header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-.account-number {
-    color: #888;
-}
+.ledger-meta { background:white; padding:16px 20px; border-radius:8px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.07); }
+.ledger-meta p { margin:4px 0; }
+.filter-bar { background:white; padding:14px 18px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.07); margin-bottom:16px; }
+.filter-row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.filter-group { display:flex; flex-direction:column; gap:3px; min-width:130px; }
+.filter-group label { font-size:0.8rem; font-weight:bold; }
+.filter-group input { padding:7px 10px; font-size:0.9rem; }
+.btn-sm { padding:7px 14px; font-size:0.9rem; }
+.pr-link { color:#3498db; cursor:pointer; text-decoration:underline; }
+.balance-col { font-weight:bold; }
 </style>
 
-<h2>Ledger: {{ account.account_name }}</h2>
-<p>Account #: {{ account.account_number }}</p>
-
-<div>
-    <strong>Category:</strong> {{ account.category }}<br>
-    <strong>Normal Side:</strong> {{ account.normal_side }}<br>
-    <strong>Debit Total:</strong> {{ account.debit_total }}<br>
-    <strong>Credit Total:</strong> {{ account.credit_total }}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('accounts') }}">← Chart of Accounts</a>
 </div>
 
+<div class="ledger-meta">
+    <h2>Ledger: {{ account.account_name }}</h2>
+    <p>Account #: <strong>{{ account.account_number }}</strong> &nbsp;|&nbsp;
+       Category: <strong>{{ account.category }}</strong> &nbsp;|&nbsp;
+       Normal Side: <strong>{{ account.normal_side }}</strong></p>
+    <p>Initial Balance: <strong>{{ account.initial_balance | currency }}</strong> &nbsp;|&nbsp;
+       Debit Total: <strong>{{ account.debit_total | currency }}</strong> &nbsp;|&nbsp;
+       Credit Total: <strong>{{ account.credit_total | currency }}</strong> &nbsp;|&nbsp;
+       Current Balance: <strong>{{ account.current_balance | currency }}</strong></p>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+    <form method="GET">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Date From</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="filter-group">
+                <label>Date To</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="filter-group" style="min-width:180px;">
+                <label>Search (account name or amount)</label>
+                <input type="text" name="search" value="{{ search }}" placeholder="e.g. Cash or 500.00">
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+                <button type="submit" class="btn-sm">Apply</button>
+                <a href="{{ url_for('account_ledger', account_id=account.account_id) }}">
+                    <button type="button" class="btn-sm btn-secondary">Clear</button>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if rows %}
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>PR</th>
+            <th>Description</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th>Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Opening balance row -->
+        <tr>
+            <td colspan="5" style="color:#888;font-style:italic;">Opening Balance</td>
+            <td class="balance-col">{{ account.initial_balance | currency }}</td>
+        </tr>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.line.entry.date.strftime('%Y-%m-%d') }}</td>
+            <td>
+                <a class="pr-link" href="{{ url_for('journal_detail', entry_id=row.line.entry.entry_id) }}"
+                   title="View journal entry #{{ row.line.entry.entry_id }}">
+                    JE-{{ row.line.entry.entry_id }}
+                </a>
+            </td>
+            <td>{{ row.line.entry.description or '' }}</td>
+            <td>{% if row.line.debit > 0 %}{{ row.line.debit | currency }}{% endif %}</td>
+            <td>{% if row.line.credit > 0 %}{{ row.line.credit | currency }}{% endif %}</td>
+            <td class="balance-col">{{ row.balance | currency }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div style="text-align:center;padding:40px;color:#888;font-style:italic;">
+    No approved transactions found for this account.
+</div>
+{% endif %}
 {% endblock %}

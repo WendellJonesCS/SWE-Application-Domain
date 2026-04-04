@@ -38,10 +38,22 @@
             </a>
         </li>
         <li style="margin: 10px 0;">
-            <a href="#" title="Journal Entries — coming soon">
-                📒 Journal Entries <span style="color:#aaa; font-size:0.85em;">(coming soon)</span>
+            <a href="{{ url_for('journal_list') }}" title="View and create journal entries">
+                📒 Journal Entries
             </a>
         </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('adjusting_list') }}" title="View and create adjusting entries">
+                📝 Adjusting Entries
+            </a>
+        </li>
+        {% if user.role.role_name == 'ROLE_MANAGER' %}
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('report_trial_balance') }}" title="Financial Reports">
+                📊 Financial Reports
+            </a>
+        </li>
+        {% endif %}
     </ul>
 </div>
 

@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+{% block title %}New Adjusting Entry - LockBook{% endblock %}
+
+{% block body %}
+<style>
+.je-form { background:white; padding:24px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+.lines-table { width:100%; border-collapse:collapse; margin:16px 0; }
+.lines-table th { background:#2c3e50; color:white; padding:10px; text-align:left; }
+.lines-table td { padding:8px; border-bottom:1px solid #eee; vertical-align:middle; }
+.lines-table input, .lines-table select { padding:7px; border:1px solid #ddd; border-radius:4px; width:100%; }
+.btn-sm { padding:7px 14px; font-size:0.9rem; }
+.btn-add-line { background:#27ae60; color:white; border:none; border-radius:4px; padding:7px 14px; cursor:pointer; font-size:0.9rem; }
+.btn-add-line:hover { background:#219a52; }
+.btn-remove { background:#e74c3c; color:white; border:none; border-radius:4px; padding:4px 10px; cursor:pointer; }
+.error-list { list-style:none; padding:0; margin:0 0 16px 0; }
+.error-list li { color:#721c24; background:#f8d7da; border:1px solid #f5c6cb; padding:8px 12px; border-radius:4px; margin-bottom:6px; font-size:0.9rem; }
+.totals-row { background:#f8f9fa; font-weight:bold; }
+.aje-badge { display:inline-block; background:#6f42c1; color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem; margin-left:10px; }
+</style>
+
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('adjusting_list') }}">← Back to Adjusting Entries</a>
+</div>
+
+<h2 style="margin-bottom:16px;">New Adjusting Entry <span class="aje-badge">ADJUSTING</span></h2>
+
+{% if errors %}
+<ul class="error-list">
+    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<div class="je-form">
+<form method="POST" enctype="multipart/form-data" id="je-form">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:160px;">
+            <label for="date">Date *</label>
+            <input type="date" id="date" name="date" value="{{ form.get('date', '') }}" required>
+        </div>
+        <div class="form-group" style="flex:3;min-width:260px;">
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description"
+                   value="{{ form.get('description', '') }}" placeholder="Adjusting entry memo">
+        </div>
+    </div>
+
+    <p style="font-weight:bold;margin:16px 0 6px;color:#2c3e50;">Journal Lines (debits first)</p>
+    <table class="lines-table" id="lines-table">
+        <thead>
+            <tr>
+                <th style="width:40%">Account</th>
+                <th style="width:15%">Type</th>
+                <th style="width:18%">Debit</th>
+                <th style="width:18%">Credit</th>
+                <th style="width:9%"></th>
+            </tr>
+        </thead>
+        <tbody id="lines-body">
+            <tr class="line-row">
+                <td><select name="account_id[]" required>
+                    <option value="">-- Select Account --</option>
+                    {% for acct in accounts %}
+                    <option value="{{ acct.account_id }}">{{ acct.account_number }} – {{ acct.account_name }}</option>
+                    {% endfor %}
+                </select></td>
+                <td><select name="line_type[]" class="line-type-sel" onchange="toggleAmounts(this)">
+                    <option value="debit">Debit</option>
+                    <option value="credit">Credit</option>
+                </select></td>
+                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input"></td>
+                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input" disabled></td>
+                <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>
+            </tr>
+            <tr class="line-row">
+                <td><select name="account_id[]" required>
+                    <option value="">-- Select Account --</option>
+                    {% for acct in accounts %}
+                    <option value="{{ acct.account_id }}">{{ acct.account_number }} – {{ acct.account_name }}</option>
+                    {% endfor %}
+                </select></td>
+                <td><select name="line_type[]" class="line-type-sel" onchange="toggleAmounts(this)">
+                    <option value="debit">Debit</option>
+                    <option value="credit" selected>Credit</option>
+                </select></td>
+                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input" disabled></td>
+                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input"></td>
+                <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td colspan="2" style="text-align:right;padding:10px;">Totals:</td>
+                <td id="total-debit" style="padding:10px;">0.00</td>
+                <td id="total-credit" style="padding:10px;">0.00</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <button type="button" class="btn-add-line" onclick="addLine('debit')">+ Add Debit Line</button>
+    <button type="button" class="btn-add-line" onclick="addLine('credit')" style="margin-left:8px;">+ Add Credit Line</button>
+
+    <div class="form-group" style="margin-top:20px;">
+        <label for="attachments">Attach Source Documents (PDF, Word, Excel, CSV, JPG, PNG)</label>
+        <input type="file" id="attachments" name="attachments" multiple
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png" style="padding:6px;">
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:20px;">
+        <button type="submit" name="action" value="submit">Submit for Approval</button>
+        <button type="submit" name="action" value="cancel" class="btn-secondary">Cancel</button>
+        <button type="button" class="btn-secondary" onclick="resetForm()">Reset</button>
+    </div>
+</form>
+</div>
+
+<script>
+var accountOptions = `{% for acct in accounts %}<option value="{{ acct.account_id }}">{{ acct.account_number }} – {{ acct.account_name }}</option>{% endfor %}`;
+
+function addLine(type) {
+    var tbody = document.getElementById('lines-body');
+    var tr = document.createElement('tr');
+    tr.className = 'line-row';
+    var dd = type === 'credit' ? 'disabled' : '';
+    var cd = type === 'debit'  ? 'disabled' : '';
+    tr.innerHTML = `<td><select name="account_id[]" required><option value="">-- Select Account --</option>${accountOptions}</select></td>
+        <td><select name="line_type[]" class="line-type-sel" onchange="toggleAmounts(this)">
+            <option value="debit" ${type==='debit'?'selected':''}>Debit</option>
+            <option value="credit" ${type==='credit'?'selected':''}>Credit</option>
+        </select></td>
+        <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input" ${dd}></td>
+        <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input" ${cd}></td>
+        <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>`;
+    tbody.appendChild(tr);
+    updateTotals();
+}
+
+function removeLine(btn) {
+    if (document.querySelectorAll('.line-row').length <= 2) {
+        alert('Need at least one debit and one credit line.');
+        return;
+    }
+    btn.closest('tr').remove();
+    updateTotals();
+}
+
+function toggleAmounts(sel) {
+    var row = sel.closest('tr');
+    var di = row.querySelector('.debit-input'), ci = row.querySelector('.credit-input');
+    if (sel.value === 'debit') { di.disabled=false; ci.disabled=true; ci.value=''; }
+    else { ci.disabled=false; di.disabled=true; di.value=''; }
+    updateTotals();
+}
+
+function updateTotals() {
+    var d=0, c=0;
+    document.querySelectorAll('.debit-input:not([disabled])').forEach(i => d += parseFloat(i.value||0));
+    document.querySelectorAll('.credit-input:not([disabled])').forEach(i => c += parseFloat(i.value||0));
+    var td = document.getElementById('total-debit'), tc = document.getElementById('total-credit');
+    td.textContent = d.toFixed(2); tc.textContent = c.toFixed(2);
+    var ok = Math.abs(d-c) < 0.005;
+    td.style.color = ok ? '' : '#e74c3c';
+    tc.style.color = ok ? '' : '#e74c3c';
+}
+
+function resetForm() {
+    if (!confirm('Reset all lines?')) return;
+    document.getElementById('je-form').reset();
+    var rows = document.querySelectorAll('.line-row');
+    for (var i=2; i<rows.length; i++) rows[i].remove();
+    updateTotals();
+}
+
+document.getElementById('lines-table').addEventListener('input', updateTotals);
+updateTotals();
+</script>
+{% endblock %}

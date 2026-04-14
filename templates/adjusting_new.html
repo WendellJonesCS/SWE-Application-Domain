@@ -67,8 +67,8 @@
                     <option value="debit">Debit</option>
                     <option value="credit">Credit</option>
                 </select></td>
-                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input"></td>
-                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input" disabled></td>
+                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input" value=""></td>
+                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="—" class="credit-input" value="0" style="background:#f0f0f0;color:#aaa;" readonly></td>
                 <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>
             </tr>
             <tr class="line-row">
@@ -82,8 +82,8 @@
                     <option value="debit">Debit</option>
                     <option value="credit" selected>Credit</option>
                 </select></td>
-                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input" disabled></td>
-                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input"></td>
+                <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="—" class="debit-input" value="0" style="background:#f0f0f0;color:#aaa;" readonly></td>
+                <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input" value=""></td>
                 <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>
             </tr>
         </tbody>
@@ -121,15 +121,17 @@ function addLine(type) {
     var tbody = document.getElementById('lines-body');
     var tr = document.createElement('tr');
     tr.className = 'line-row';
-    var dd = type === 'credit' ? 'disabled' : '';
-    var cd = type === 'debit'  ? 'disabled' : '';
+    var debitRO  = type === 'credit' ? 'readonly style="background:#f0f0f0;color:#aaa;"' : '';
+    var creditRO = type === 'debit'  ? 'readonly style="background:#f0f0f0;color:#aaa;"' : '';
+    var debitVal  = type === 'credit' ? '0' : '';
+    var creditVal = type === 'debit'  ? '0' : '';
     tr.innerHTML = `<td><select name="account_id[]" required><option value="">-- Select Account --</option>${accountOptions}</select></td>
         <td><select name="line_type[]" class="line-type-sel" onchange="toggleAmounts(this)">
             <option value="debit" ${type==='debit'?'selected':''}>Debit</option>
             <option value="credit" ${type==='credit'?'selected':''}>Credit</option>
         </select></td>
-        <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="0.00" class="debit-input" ${dd}></td>
-        <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="0.00" class="credit-input" ${cd}></td>
+        <td><input type="number" name="debit[]" step="0.01" min="0" placeholder="${type==='debit'?'0.00':'—'}" class="debit-input" value="${debitVal}" ${debitRO}></td>
+        <td><input type="number" name="credits[]" step="0.01" min="0" placeholder="${type==='credit'?'0.00':'—'}" class="credit-input" value="${creditVal}" ${creditRO}></td>
         <td><button type="button" class="btn-remove" onclick="removeLine(this)">✕</button></td>`;
     tbody.appendChild(tr);
     updateTotals();
@@ -147,15 +149,23 @@ function removeLine(btn) {
 function toggleAmounts(sel) {
     var row = sel.closest('tr');
     var di = row.querySelector('.debit-input'), ci = row.querySelector('.credit-input');
-    if (sel.value === 'debit') { di.disabled=false; ci.disabled=true; ci.value=''; }
-    else { ci.disabled=false; di.disabled=true; di.value=''; }
+    if (sel.value === 'debit') {
+        di.readOnly = false; di.style.background = ''; di.style.color = ''; di.placeholder = '0.00';
+        ci.readOnly = true;  ci.style.background = '#f0f0f0'; ci.style.color = '#aaa'; ci.value = '0'; ci.placeholder = '—';
+    } else {
+        ci.readOnly = false; ci.style.background = ''; ci.style.color = ''; ci.placeholder = '0.00';
+        di.readOnly = true;  di.style.background = '#f0f0f0'; di.style.color = '#aaa'; di.value = '0'; di.placeholder = '—';
+    }
     updateTotals();
 }
 
 function updateTotals() {
     var d=0, c=0;
-    document.querySelectorAll('.debit-input:not([disabled])').forEach(i => d += parseFloat(i.value||0));
-    document.querySelectorAll('.credit-input:not([disabled])').forEach(i => c += parseFloat(i.value||0));
+    document.querySelectorAll('.line-row').forEach(function(row) {
+        var lt = row.querySelector('.line-type-sel').value;
+        if (lt === 'debit') d += parseFloat(row.querySelector('.debit-input').value || 0);
+        else                c += parseFloat(row.querySelector('.credit-input').value || 0);
+    });
     var td = document.getElementById('total-debit'), tc = document.getElementById('total-credit');
     td.textContent = d.toFixed(2); tc.textContent = c.toFixed(2);
     var ok = Math.abs(d-c) < 0.005;

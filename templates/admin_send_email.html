@@ -1,32 +1,36 @@
 {% extends "layout.html" %}
+
 {% block title %}Send Email - LockBook{% endblock %}
 
 {% block body %}
-<div style="margin-bottom:12px;">
-    <a href="{{ url_for('accounts') }}">← Back to Chart of Accounts</a>
+<div class="nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/admin/users">Manage Users</a>
+    <a href="/admin/requests">User Requests</a>
+    <a href="/admin/create-user">Create User</a>
+    <a href="/admin/expired-passwords">Expired Passwords</a>
+    <a href="/logout" style="float: right;">Logout</a>
 </div>
-<h2 style="margin-bottom:16px;">Send Email</h2>
-<form method="POST" style="max-width:600px;">
-    <div class="form-group">
-        <label for="to_user_id">To *</label>
-        <select id="to_user_id" name="to_user_id" required>
-            <option value="">-- Select Recipient --</option>
-            {% for u in recipients %}
-            <option value="{{ u.user_id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role.role_name.replace('ROLE_','') }}) – {{ u.email }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="subject">Subject *</label>
-        <input type="text" id="subject" name="subject" required placeholder="Email subject">
-    </div>
-    <div class="form-group">
-        <label for="body">Message *</label>
-        <textarea id="body" name="body" rows="6" required placeholder="Write your message here..."></textarea>
-    </div>
-    <div style="display:flex;gap:12px;">
-        <button type="submit">Send Email</button>
-        <a href="{{ url_for('accounts') }}"><button type="button" class="btn-secondary">Cancel</button></a>
-    </div>
-</form>
+
+<div style="max-width: 600px; margin: 30px auto;">
+    <h2>Send Email to {{ user.username }}</h2>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Subject:</label>
+            <input type="text" name="subject" required>
+        </div>
+
+        <div class="form-group">
+            <label>Message:</label>
+            <textarea name="message" rows="8" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <button type="submit">Send Email</button>
+            <a href="/admin/users" class="btn-secondary" style="margin-left: 10px; display: inline-block; padding: 10px 20px;">Cancel</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

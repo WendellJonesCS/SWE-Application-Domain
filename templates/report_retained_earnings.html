@@ -32,6 +32,7 @@
     <a href="{{ url_for('report_trial_balance') }}"><button class="btn-sm btn-secondary">Trial Balance</button></a>
     <a href="{{ url_for('report_income_statement') }}"><button class="btn-sm btn-secondary">Income Statement</button></a>
     <a href="{{ url_for('report_balance_sheet') }}"><button class="btn-sm btn-secondary">Balance Sheet</button></a>
+    <a href="{{ url_for('report_download', report_type='retained-earnings', date_from=date_from or '', date_to=date_to or '') }}"><button class="btn-sm btn-secondary">⬇ Save CSV</button></a>
     <button class="btn-sm btn-secondary" onclick="window.print()">🖨 Print</button>
 </div>
 

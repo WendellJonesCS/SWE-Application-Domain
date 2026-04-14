@@ -29,6 +29,7 @@
     <a href="{{ url_for('report_trial_balance') }}"><button class="btn-sm btn-secondary">Trial Balance</button></a>
     <a href="{{ url_for('report_income_statement') }}"><button class="btn-sm btn-secondary">Income Statement</button></a>
     <a href="{{ url_for('report_retained_earnings') }}"><button class="btn-sm btn-secondary">Retained Earnings</button></a>
+    <a href="{{ url_for('report_download', report_type='balance-sheet', as_of=as_of) }}"><button class="btn-sm btn-secondary">⬇ Save CSV</button></a>
     <button class="btn-sm btn-secondary" onclick="window.print()">🖨 Print</button>
 </div>
 

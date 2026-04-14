@@ -84,6 +84,7 @@
     <nav class="nav">
         <a href="/dashboard">Dashboard</a>
         <a href="{{ url_for('accounts') }}">Chart of Accounts</a>
+        <a href="{{ url_for('accounts_event_log') }}">Event Log</a>
         <a href="{{ url_for('journal_list') }}">Journal Entries</a>
         <a href="{{ url_for('adjusting_list') }}">Adjusting Entries</a>
         {% if current_user.role.role_name == 'ROLE_MANAGER' %}

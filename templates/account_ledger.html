@@ -78,10 +78,17 @@
         <tr>
             <td>{{ row.line.entry.date.strftime('%Y-%m-%d') }}</td>
             <td>
+                {% if row.line.entry.entry_type == 'ADJUSTING' %}
+                <a class="pr-link" href="{{ url_for('adjusting_detail', entry_id=row.line.entry.entry_id) }}"
+                   title="View adjusting entry #{{ row.line.entry.entry_id }}">
+                    AJE-{{ row.line.entry.entry_id }}
+                </a>
+                {% else %}
                 <a class="pr-link" href="{{ url_for('journal_detail', entry_id=row.line.entry.entry_id) }}"
                    title="View journal entry #{{ row.line.entry.entry_id }}">
                     JE-{{ row.line.entry.entry_id }}
                 </a>
+                {% endif %}
             </td>
             <td>{{ row.line.entry.description or '' }}</td>
             <td>{% if row.line.debit > 0 %}{{ row.line.debit | currency }}{% endif %}</td>

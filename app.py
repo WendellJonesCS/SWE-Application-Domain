@@ -217,7 +217,66 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", user=current_user)
+    # Pending journal entries count (for notifications panel)
+    pending_je  = JournalEntry.query.filter_by(status='PENDING', entry_type='REGULAR').count()
+    pending_aje = JournalEntry.query.filter_by(status='PENDING', entry_type='ADJUSTING').count()
+
+    # Financial ratios (computed from approved entries)
+    ratios = {}
+    try:
+        today = datetime.utcnow().date()
+
+        def bal(category, normal_side=None):
+            q = Account.query.filter_by(is_active=1, category=category)
+            total = 0.0
+            for a in q.all():
+                total += _account_balance_as_of(a, today)
+            return total
+
+        total_assets      = bal('Asset')
+        total_liabilities = bal('Liability')
+        total_equity      = bal('Equity')
+        total_revenue     = bal('Revenue')
+        total_expense     = bal('Expense')
+        net_income        = total_revenue - total_expense
+
+        # Current assets / current liabilities (approximate: use all assets/liabilities)
+        current_ratio = (total_assets / total_liabilities) if total_liabilities else None
+        # Debt-to-equity
+        debt_to_equity = (total_liabilities / total_equity) if total_equity else None
+        # Net profit margin
+        net_profit_margin = (net_income / total_revenue * 100) if total_revenue else None
+        # Return on assets
+        roa = (net_income / total_assets * 100) if total_assets else None
+        # Return on equity
+        roe = (net_income / total_equity * 100) if total_equity else None
+        # Debt ratio
+        debt_ratio = (total_liabilities / total_assets) if total_assets else None
+
+        ratios = {
+            'current_ratio':     {'value': current_ratio,     'label': 'Current Ratio',      'unit': 'x',  'green': (2, 999), 'yellow': (1, 2),    'red': (0, 1)},
+            'debt_to_equity':    {'value': debt_to_equity,    'label': 'Debt-to-Equity',     'unit': 'x',  'green': (0, 1),   'yellow': (1, 2),    'red': (2, 999)},
+            'net_profit_margin': {'value': net_profit_margin, 'label': 'Net Profit Margin',  'unit': '%',  'green': (10, 999),'yellow': (0, 10),   'red': (-999, 0)},
+            'roa':               {'value': roa,               'label': 'Return on Assets',   'unit': '%',  'green': (5, 999), 'yellow': (0, 5),    'red': (-999, 0)},
+            'roe':               {'value': roe,               'label': 'Return on Equity',   'unit': '%',  'green': (10, 999),'yellow': (0, 10),   'red': (-999, 0)},
+            'debt_ratio':        {'value': debt_ratio,        'label': 'Debt Ratio',         'unit': 'x',  'green': (0, 0.5), 'yellow': (0.5, 0.7),'red': (0.7, 999)},
+        }
+        # Assign color to each ratio
+        for k, r in ratios.items():
+            v = r['value']
+            if v is None:
+                r['color'] = 'gray'
+            elif r['green'][0] <= v < r['green'][1]:
+                r['color'] = 'green'
+            elif r['yellow'][0] <= v < r['yellow'][1]:
+                r['color'] = 'yellow'
+            else:
+                r['color'] = 'red'
+    except Exception:
+        pass
+
+    return render_template("dashboard.html", user=current_user,
+                           pending_je=pending_je, pending_aje=pending_aje, ratios=ratios)
 
 
 @app.route("/register-request", methods=["GET", "POST"])
@@ -1031,7 +1090,7 @@ def journal_list():
     date_to   = request.args.get('date_to', '').strip()
     search    = request.args.get('search', '').strip()
 
-    q = JournalEntry.query
+    q = JournalEntry.query.filter(JournalEntry.entry_type == 'REGULAR')
 
     if status:
         q = q.filter(JournalEntry.status == status)
@@ -1108,9 +1167,15 @@ def journal_new():
         has_credit   = False
 
         for i, (aid, d, c, lt) in enumerate(zip(account_ids, debits, credits, line_types)):
+            # Use line_type to determine which side is active;
+            # disabled inputs are not submitted so the other value will be empty.
             try:
-                dval = round(float(d or 0), 2)
-                cval = round(float(c or 0), 2)
+                if lt == 'debit':
+                    dval = round(float(d or 0), 2)
+                    cval = 0.0
+                else:
+                    cval = round(float(c or 0), 2)
+                    dval = 0.0
             except ValueError:
                 errors.append(get_error('INVALID_AMOUNT'))
                 continue
@@ -1121,10 +1186,6 @@ def journal_new():
 
             if dval == 0 and cval == 0:
                 errors.append(get_error('ZERO_LINE'))
-                continue
-
-            if dval > 0 and cval > 0:
-                errors.append(get_error('BOTH_DEBIT_CREDIT'))
                 continue
 
             acct = Account.query.get(aid)
@@ -1327,16 +1388,18 @@ def adjusting_new():
 
         for i, (aid, d, c, lt) in enumerate(zip(account_ids, debits, credits, line_types)):
             try:
-                dval = round(float(d or 0), 2)
-                cval = round(float(c or 0), 2)
+                if lt == 'debit':
+                    dval = round(float(d or 0), 2)
+                    cval = 0.0
+                else:
+                    cval = round(float(c or 0), 2)
+                    dval = 0.0
             except ValueError:
                 errors.append(get_error('INVALID_AMOUNT')); continue
             if dval < 0 or cval < 0:
                 errors.append(get_error('NEGATIVE_AMOUNT')); continue
             if dval == 0 and cval == 0:
                 errors.append(get_error('ZERO_LINE')); continue
-            if dval > 0 and cval > 0:
-                errors.append(get_error('BOTH_DEBIT_CREDIT')); continue
             acct = Account.query.get(aid)
             if not acct or not acct.is_active:
                 errors.append(get_error('INVALID_ACCOUNT')); continue
@@ -1604,6 +1667,70 @@ def report_retained_earnings():
                            beginning_re=beginning_re, net_income=net_income,
                            ending_re=ending_re,
                            date_from=date_from, date_to=date_to, as_of=as_of_date)
+
+
+# ── Sprint 4: Report CSV download ────────────────────────────────────────────
+
+@app.route("/reports/<report_type>/download")
+@login_required
+def report_download(report_type):
+    from flask import Response
+    import csv, io
+    if current_user.role.role_name != 'ROLE_MANAGER':
+        flash("Access denied.", "error")
+        return redirect(url_for('dashboard'))
+
+    as_of_date, date_from, date_to = _get_report_date()
+    if not date_to:
+        date_to = as_of_date
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    if report_type == 'trial-balance':
+        writer.writerow(['Account #', 'Account Name', 'Debit', 'Credit'])
+        accounts_all = Account.query.order_by(Account.account_number).all()
+        for acct in accounts_all:
+            bal = _account_balance_as_of(acct, as_of_date)
+            d = bal if (acct.normal_side == 'Debit' and bal >= 0) else (abs(bal) if bal < 0 else 0)
+            c = bal if (acct.normal_side == 'Credit' and bal >= 0) else (abs(bal) if bal < 0 else 0)
+            if d > 0 or c > 0:
+                writer.writerow([acct.account_number, acct.account_name, f'{d:.2f}', f'{c:.2f}'])
+        filename = f'trial_balance_{as_of_date}.csv'
+
+    elif report_type == 'income-statement':
+        writer.writerow(['Type', 'Account #', 'Account Name', 'Amount'])
+        for acct in Account.query.filter_by(category='Revenue', is_active=1).order_by(Account.account_number).all():
+            writer.writerow(['Revenue', acct.account_number, acct.account_name, f'{_account_balance_range(acct, date_from, date_to):.2f}'])
+        for acct in Account.query.filter_by(category='Expense', is_active=1).order_by(Account.account_number).all():
+            writer.writerow(['Expense', acct.account_number, acct.account_name, f'{_account_balance_range(acct, date_from, date_to):.2f}'])
+        filename = f'income_statement_{date_to}.csv'
+
+    elif report_type == 'balance-sheet':
+        writer.writerow(['Category', 'Account #', 'Account Name', 'Amount'])
+        for cat in ['Asset', 'Liability', 'Equity']:
+            for acct in Account.query.filter_by(category=cat, is_active=1).order_by(Account.account_number).all():
+                writer.writerow([cat, acct.account_number, acct.account_name, f'{_account_balance_as_of(acct, as_of_date):.2f}'])
+        filename = f'balance_sheet_{as_of_date}.csv'
+
+    elif report_type == 'retained-earnings':
+        writer.writerow(['Item', 'Amount'])
+        re_accounts = Account.query.filter_by(category='Equity', is_active=1).all()
+        beg = sum(_account_balance_as_of(a, date_from) if date_from else _account_balance_as_of(a, as_of_date) for a in re_accounts)
+        rev = sum(_account_balance_range(a, date_from, date_to) for a in Account.query.filter_by(category='Revenue', is_active=1).all())
+        exp = sum(_account_balance_range(a, date_from, date_to) for a in Account.query.filter_by(category='Expense', is_active=1).all())
+        ni  = rev - exp
+        writer.writerow(['Beginning Retained Earnings', f'{beg:.2f}'])
+        writer.writerow(['Net Income', f'{ni:.2f}'])
+        writer.writerow(['Ending Retained Earnings', f'{beg + ni:.2f}'])
+        filename = f'retained_earnings_{as_of_date}.csv'
+    else:
+        flash("Unknown report type.", "error")
+        return redirect(url_for('dashboard'))
+
+    output.seek(0)
+    return Response(output.getvalue(), mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename={filename}'})
 
 
 if __name__ == "__main__":

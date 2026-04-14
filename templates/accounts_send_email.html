@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}Send Email - LockBook{% endblock %}
+
+{% block body %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('accounts') }}">← Back to Chart of Accounts</a>
+</div>
+<h2 style="margin-bottom:16px;">Send Email</h2>
+<form method="POST" style="max-width:600px;">
+    <div class="form-group">
+        <label for="to_user_id">To *</label>
+        <select id="to_user_id" name="to_user_id" required>
+            <option value="">-- Select Recipient --</option>
+            {% for u in recipients %}
+            <option value="{{ u.user_id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role.role_name.replace('ROLE_','') }}) – {{ u.email }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="subject">Subject *</label>
+        <input type="text" id="subject" name="subject" required placeholder="Email subject">
+    </div>
+    <div class="form-group">
+        <label for="body">Message *</label>
+        <textarea id="body" name="body" rows="6" required placeholder="Write your message here..."></textarea>
+    </div>
+    <div style="display:flex;gap:12px;">
+        <button type="submit">Send Email</button>
+        <a href="{{ url_for('accounts') }}"><button type="button" class="btn-secondary">Cancel</button></a>
+    </div>
+</form>
+{% endblock %}

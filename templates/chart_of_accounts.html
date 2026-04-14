@@ -204,6 +204,14 @@
                 {% if account.is_active == 0 %}
                     <span class="badge-inactive" title="This account is inactive">Inactive</span>
                 {% endif %}
+                {% if current_user.role.role_name == 'ROLE_ADMIN' %}
+                <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
+                   title="View/Edit account details"
+                   onclick="event.stopPropagation()"
+                   style="font-size:0.8rem;margin-left:8px;color:#888;">
+                    [detail]
+                </a>
+                {% endif %}
             </td>
             <td>{{ account.category }}</td>
             <td>{{ account.subcategory or '—' }}</td>

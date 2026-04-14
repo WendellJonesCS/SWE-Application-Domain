@@ -30,13 +30,6 @@
     }
 </style>
 
-<div class="nav">
-    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
-    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
-    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
-    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
-</div>
-
 <div class="form-container">
     <h2 style="margin-bottom: 20px;">Add New Account</h2>
 
@@ -98,6 +91,16 @@
                    value="{{ request.form.get('subcategory', '') }}"
                    placeholder="e.g. Current Assets"
                    title="Enter an optional subcategory for this account">
+        </div>
+
+        <div class="form-group">
+            <label for="created_at" title="Date and time this account was created">
+                Date/Time Created <span style="color:red;">*</span>
+            </label>
+            <input type="datetime-local" id="created_at" name="created_at"
+                   value="{{ request.form.get('created_at', '') }}"
+                   required
+                   title="Enter the date and time this account was created">
         </div>
 
         <div class="form-group">

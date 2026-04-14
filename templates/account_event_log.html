@@ -45,13 +45,6 @@
     }
 </style>
 
-<div class="nav">
-    <a href="/dashboard" title="Go to Dashboard">Dashboard</a>
-    <a href="{{ url_for('accounts') }}" title="Chart of Accounts">Chart of Accounts</a>
-    <a href="#" title="Journal Entries (coming soon)">Journal Entries</a>
-    <a href="/logout" style="float: right;" title="Log out of LockBook">Logout</a>
-</div>
-
 <div class="event-log-header">
     <h2>Account Event Log</h2>
 </div>
@@ -86,6 +79,7 @@
             </td>
             <td title="Performed by {{ log.user.first_name }} {{ log.user.last_name }}">
                 {{ log.user.username }}
+                <span style="color:#888;font-size:0.8rem;">(ID: {{ log.user_id }})</span>
             </td>
             <td>
                 {% if log.before_image %}

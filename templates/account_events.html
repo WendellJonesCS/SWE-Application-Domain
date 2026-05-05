@@ -1,45 +1,77 @@
 {% extends "layout.html" %}
-
-{% block title %}Account Event Log{% endblock %}
-
+{% block title %}Send Email - {{ account.account_name }} - LockBook{% endblock %}
 {% block body %}
 
-<div class="nav">
-    <a href="/accounts">Back to Accounts</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="bi bi-envelope me-2"></i>Send Email
+        <span class="text-muted fw-normal fs-5 ms-2">re: {{ account.account_name }}</span>
+    </h4>
+    <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
 </div>
 
-<h2>Account Event Log</h2>
+<div class="row justify-content-center">
+    <div class="col-lg-7 col-xl-6">
 
-<table>
-    <tr>
-        <th>Event ID</th>
-        <th>Account</th>
-        <th>Action</th>
-        <th>Before</th>
-        <th>After</th>
-        <th>User</th>
-        <th>Date</th>
-    </tr>
+        <!-- Account context -->
+        <div class="card mb-4">
+            <div class="card-header-primary"><i class="bi bi-list-columns me-2"></i>Account</div>
+            <div class="card-body py-3">
+                <div class="row g-2 small">
+                    <div class="col-4 text-muted">Account Name</div>
+                    <div class="col-8 fw-semibold">{{ account.account_name }}</div>
+                    <div class="col-4 text-muted">Account #</div>
+                    <div class="col-8 font-monospace">{{ account.account_number }}</div>
+                    <div class="col-4 text-muted">Balance</div>
+                    <div class="col-8 font-monospace">{{ account.current_balance | currency }}</div>
+                </div>
+            </div>
+        </div>
 
-    {% for event in events %}
-    <tr>
-        <td>{{ event.event_id }}</td>
-        <td>{{ event.account_name }}</td>
-        <td>{{ event.action }}</td>
+        <!-- Compose -->
+        <div class="card">
+            <div class="card-header-primary"><i class="bi bi-pencil me-2"></i>Compose Message</div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Send To <span class="text-danger">*</span>
+                        </label>
+                        <select name="recipient_type" class="form-select" required>
+                            <option value="">— Select Recipient —</option>
+                            <option value="manager">All Managers</option>
+                            <option value="accountant">All Accountants</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Subject <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="subject" class="form-control"
+                               placeholder="e.g. Question about {{ account.account_name }}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Message <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="message" class="form-control" rows="6"
+                                  placeholder="Write your message here…" required></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>Send
+                        </button>
+                        <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
+                           class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-        <td>
-            <pre>{{ event.before_data }}</pre>
-        </td>
-
-        <td>
-            <pre>{{ event.after_data }}</pre>
-        </td>
-
-        <td>{{ event.user_id }}</td>
-        <td>{{ event.timestamp }}</td>
-    </tr>
-    {% endfor %}
-
-</table>
+    </div>
+</div>
 
 {% endblock %}

@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block title %}Income Statement - LockBook{% endblock %}
+{% block body %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Income Statement</h4>
+    <form class="d-flex gap-2 align-items-center" method="GET">
+        <label class="form-label mb-0 small fw-semibold">Period End</label>
+        <input type="date" name="period_end" value="{{ period_end }}" class="form-control form-control-sm" style="width:160px;">
+        <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+    </form>
+</div>
+
+<div class="fin-card">
+    <!-- Three headings -->
+    <div class="fin-heading">
+        <p class="company">LockBook</p>
+        <p class="stmt-name">Income Statement</p>
+        <p class="stmt-date">For the Period Ended {{ period_end }}</p>
+    </div>
+    <div class="fin-divider"></div>
+
+    <table class="fin-table">
+
+        <!-- REVENUES -->
+        <tr class="section-label"><td colspan="2">Revenues</td></tr>
+        {% for acct in revenues %}
+        <tr class="account-row">
+            <td>{{ acct.account_name }}</td>
+            <td class="amount positive">{{ acct.current_balance | currency }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" class="text-muted ps-4 fst-italic small">No revenue accounts</td></tr>
+        {% endfor %}
+        <tr class="subtotal-row">
+            <td>Total Revenues</td>
+            <td class="amount positive">{{ total_revenues | currency }}</td>
+        </tr>
+
+        <!-- EXPENSES -->
+        <tr class="section-label"><td colspan="2">Expenses</td></tr>
+        {% for acct in expenses %}
+        <tr class="account-row">
+            <td>{{ acct.account_name }}</td>
+            <td class="amount">{{ acct.current_balance | currency }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" class="text-muted ps-4 fst-italic small">No expense accounts</td></tr>
+        {% endfor %}
+        <tr class="subtotal-row">
+            <td>Total Expenses</td>
+            <td class="amount">{{ total_expenses | currency }}</td>
+        </tr>
+
+        <!-- NET INCOME -->
+        <tr class="total-row">
+            <td>Net Income</td>
+            <td class="amount {{ 'positive' if net_income >= 0 else 'negative' }}">{{ net_income | currency }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}

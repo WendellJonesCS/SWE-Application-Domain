@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+{% block title %}Add Account - LockBook{% endblock %}
+
+{% block body %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Add New Account</h4>
+    <a href="{{ url_for('accounts') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Chart of Accounts
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card">
+            <div class="card-header-primary">Account Details</div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('accounts_add') }}">
+
+                    <div class="row g-3">
+
+                        <!-- Account Name -->
+                        <div class="col-12">
+                            <label for="account_name" class="form-label fw-semibold">
+                                Account Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="account_name" name="account_name"
+                                   class="form-control"
+                                   value="{{ request.form.get('account_name', '') }}"
+                                   placeholder="e.g. Cash and Cash Equivalents"
+                                   required>
+                        </div>
+
+                        <!-- Account Number + auto-detected category -->
+                        <div class="col-md-6">
+                            <label for="account_number" class="form-label fw-semibold">
+                                Account Number <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="account_number" name="account_number"
+                                   class="form-control font-monospace"
+                                   value="{{ request.form.get('account_number', '') }}"
+                                   placeholder="e.g. 10100"
+                                   pattern="[1-5][0-9]*"
+                                   required>
+                            <div class="form-text">
+                                First digit: 1=Asset · 2=Liability · 3=Equity · 4=Revenue · 5=Expense
+                            </div>
+                        </div>
+
+                        <!-- Auto-detected category badge -->
+                        <div class="col-md-6 d-flex flex-column justify-content-center">
+                            <label class="form-label fw-semibold">Detected Category</label>
+                            <div>
+                                <span id="category-badge" class="badge bg-secondary fs-6 px-3 py-2">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Normal Side -->
+                        <div class="col-md-6">
+                            <label for="normal_side" class="form-label fw-semibold">
+                                Normal Side <span class="text-danger">*</span>
+                            </label>
+                            <select id="normal_side" name="normal_side" class="form-select" required>
+                                <option value="" disabled {% if not request.form.get('normal_side') %}selected{% endif %}>— Select —</option>
+                                <option value="Debit"  {% if request.form.get('normal_side') == 'Debit'  %}selected{% endif %}>Debit</option>
+                                <option value="Credit" {% if request.form.get('normal_side') == 'Credit' %}selected{% endif %}>Credit</option>
+                            </select>
+                        </div>
+
+                        <!-- Statement -->
+                        <div class="col-md-6">
+                            <label for="statement" class="form-label fw-semibold">Financial Statement</label>
+                            <select id="statement" name="statement" class="form-select">
+                                <option value="">— None —</option>
+                                <option value="BS" {% if request.form.get('statement') == 'BS' %}selected{% endif %}>BS — Balance Sheet</option>
+                                <option value="IS" {% if request.form.get('statement') == 'IS' %}selected{% endif %}>IS — Income Statement</option>
+                                <option value="RE" {% if request.form.get('statement') == 'RE' %}selected{% endif %}>RE — Retained Earnings</option>
+                            </select>
+                        </div>
+
+                        <!-- Subcategory -->
+                        <div class="col-md-6">
+                            <label for="subcategory" class="form-label fw-semibold">Subcategory</label>
+                            <input type="text" id="subcategory" name="subcategory"
+                                   class="form-control"
+                                   value="{{ request.form.get('subcategory', '') }}"
+                                   placeholder="e.g. Current Assets">
+                        </div>
+
+                        <!-- Initial Balance -->
+                        <div class="col-md-6">
+                            <label for="initial_balance" class="form-label fw-semibold">
+                                Initial Balance <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" id="initial_balance" name="initial_balance"
+                                       class="form-control text-end font-monospace"
+                                       value="{{ request.form.get('initial_balance', '0.00') }}"
+                                       step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <!-- Display Order -->
+                        <div class="col-md-6">
+                            <label for="display_order" class="form-label fw-semibold">Display Order</label>
+                            <input type="number" id="display_order" name="display_order"
+                                   class="form-control"
+                                   value="{{ request.form.get('display_order', '') }}"
+                                   placeholder="e.g. 10">
+                            <div class="form-text">Controls sort order in reports.</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea id="description" name="description" class="form-control" rows="2"
+                                      placeholder="Optional description of this account's purpose…">{{ request.form.get('description', '') }}</textarea>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="col-12">
+                            <label for="comment" class="form-label fw-semibold">Internal Comment</label>
+                            <textarea id="comment" name="comment" class="form-control" rows="2"
+                                      placeholder="Optional internal note…">{{ request.form.get('comment', '') }}</textarea>
+                        </div>
+
+                    </div><!-- /row -->
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy me-1"></i>Save Account
+                        </button>
+                        <a href="{{ url_for('accounts') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>Cancel
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const categoryMap = {
+        '1': { label: 'Asset',     color: 'bg-primary' },
+        '2': { label: 'Liability', color: 'bg-warning text-dark' },
+        '3': { label: 'Equity',    color: 'bg-success' },
+        '4': { label: 'Revenue',   color: 'bg-info text-dark' },
+        '5': { label: 'Expense',   color: 'bg-danger' }
+    };
+
+    function updateCategory() {
+        const val = document.getElementById('account_number').value.trim();
+        const badge = document.getElementById('category-badge');
+        const entry = val.length > 0 ? categoryMap[val[0]] : null;
+        // Reset classes
+        badge.className = 'badge fs-6 px-3 py-2';
+        if (entry) {
+            badge.textContent = entry.label;
+            badge.classList.add(...entry.color.split(' '));
+        } else {
+            badge.textContent = '—';
+            badge.classList.add('bg-secondary');
+        }
+    }
+
+    document.getElementById('account_number').addEventListener('input', updateCategory);
+    updateCategory();
+</script>
+{% endblock %}

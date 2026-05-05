@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block title %}Account Event Log - LockBook{% endblock %}
+
+{% block body %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-clock-history me-2"></i>Account Event Log</h4>
+    <a href="{{ url_for('accounts') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Chart of Accounts
+    </a>
+</div>
+
+{% if logs %}
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Account</th>
+                    <th>User</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="small text-muted font-monospace">
+                        {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '—' }}
+                    </td>
+                    <td>
+                        {% if log.action == 'CREATE' %}
+                            <span class="badge bg-success">CREATE</span>
+                        {% elif log.action == 'UPDATE' %}
+                            <span class="badge bg-warning text-dark">UPDATE</span>
+                        {% elif log.action == 'DEACTIVATE' %}
+                            <span class="badge bg-danger">DEACTIVATE</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ log.account.account_name }}</span>
+                        <br>
+                        <span class="text-muted small font-monospace">#{{ log.account.account_number }}</span>
+                    </td>
+                    <td class="small">{{ log.user.username }}</td>
+                    <td>
+                        {% if log.before_image %}
+                        <span class="font-monospace small text-muted d-inline-block"
+                              style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                              title="{{ log.before_image }}">
+                            {{ log.before_image[:80] }}{% if log.before_image|length > 80 %}…{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.after_image %}
+                        <span class="font-monospace small text-muted d-inline-block"
+                              style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                              title="{{ log.after_image }}">
+                            {{ log.after_image[:80] }}{% if log.after_image|length > 80 %}…{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+        <h5>No events recorded yet</h5>
+        <p class="mb-0 small">Account activity will appear here once accounts are created or modified.</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

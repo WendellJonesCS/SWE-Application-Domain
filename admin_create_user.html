@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+{% block title %}Create User - LockBook{% endblock %}
+
+{% block body %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-person-add me-2"></i>Create New User</h4>
+    <a href="/admin/users" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Users
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7 col-xl-6">
+        <div class="card">
+            <div class="card-header-primary">User Details</div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row g-3">
+
+                        <!-- Name -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                First Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="first_name" class="form-control" required autofocus>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Last Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Address</label>
+                            <input type="text" name="address" class="form-control" placeholder="Optional">
+                        </div>
+
+                        <!-- DOB + Role -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Date of Birth <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="date_of_birth" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Role <span class="text-danger">*</span>
+                            </label>
+                            <select name="role_id" class="form-select" required>
+                                {% for role in roles %}
+                                <option value="{{ role.role_id }}">
+                                    {{ role.role_name.replace('ROLE_', '') }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="password" name="password" id="password"
+                                       class="form-control" required>
+                                <button class="btn btn-outline-secondary" type="button"
+                                        id="toggle-pw" title="Show/hide password">
+                                    <i class="bi bi-eye" id="pw-icon"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                8+ characters · start with a letter · include a number and special character
+                            </div>
+                        </div>
+
+                    </div><!-- /row -->
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-check me-1"></i>Create User
+                        </button>
+                        <a href="/admin/users" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>Cancel
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('toggle-pw').addEventListener('click', function () {
+        const pw = document.getElementById('password');
+        const icon = document.getElementById('pw-icon');
+        if (pw.type === 'password') {
+            pw.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            pw.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    });
+</script>
+{% endblock %}

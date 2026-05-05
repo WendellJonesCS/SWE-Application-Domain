@@ -1,164 +1,173 @@
 {% extends "layout.html" %}
-
 {% block title %}{{ account.account_name }} - LockBook{% endblock %}
 
 {% block body %}
-<style>
-    .detail-card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        padding: 30px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    .detail-card h2 {
-        margin-bottom: 24px;
-        color: #2c3e50;
-    }
-    .detail-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 24px;
-    }
-    .detail-table th {
-        background: #f4f4f4;
-        color: #2c3e50;
-        text-align: left;
-        width: 35%;
-        padding: 10px 14px;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-    }
-    .detail-table td {
-        padding: 10px 14px;
-        border-bottom: 1px solid #eee;
-        color: #333;
-    }
-    .status-active   { color: #27ae60; font-weight: bold; }
-    .status-inactive { color: #aaa;    font-weight: bold; }
-    .action-bar {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-        margin-top: 10px;
-    }
-    .action-bar a { text-decoration: none; }
-</style>
 
-<div class="detail-card">
-    <h2>{{ account.account_name }}</h2>
-
-    <table class="detail-table">
-        <tr>
-            <th title="The unique name of this account">Account Name</th>
-            <td>{{ account.account_name }}</td>
-        </tr>
-        <tr>
-            <th title="The unique numeric identifier for this account">Account Number</th>
-            <td>{{ account.account_number }}</td>
-        </tr>
-        <tr>
-            <th title="Top-level account category derived from account number">Category</th>
-            <td>{{ account.category }}</td>
-        </tr>
-        <tr>
-            <th title="Secondary classification within the category">Subcategory</th>
-            <td>{{ account.subcategory or '—' }}</td>
-        </tr>
-        <tr>
-            <th title="The side (Debit or Credit) that increases this account">Normal Side</th>
-            <td>{{ account.normal_side }}</td>
-        </tr>
-        <tr>
-            <th title="Optional description of this account's purpose">Description</th>
-            <td>{{ account.description or '—' }}</td>
-        </tr>
-        <tr>
-            <th title="The starting balance when the account was created">Initial Balance</th>
-            <td>{{ account.initial_balance | currency }}</td>
-        </tr>
-        <tr>
-            <th title="Total of all debit entries posted to this account">Debit Total</th>
-            <td>{{ account.debit_total | currency }}</td>
-        </tr>
-        <tr>
-            <th title="Total of all credit entries posted to this account">Credit Total</th>
-            <td>{{ account.credit_total | currency }}</td>
-        </tr>
-        <tr>
-            <th title="Current running balance of this account">Current Balance</th>
-            <td><strong>{{ account.current_balance | currency }}</strong></td>
-        </tr>
-        <tr>
-            <th title="Date and time this account was created (UTC)">Created At</th>
-            <td>{{ account.created_at.strftime('%Y-%m-%d %H:%M UTC') if account.created_at else '—' }}</td>
-        </tr>
-        <tr>
-            <th title="The administrator who created this account">Creator</th>
-            <td>
-                {% if account.creator %}
-                    {{ account.creator.first_name }} {{ account.creator.last_name }}
-                    ({{ account.creator.username }})
-                {% else %}
-                    —
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th title="Optional numeric ordering hint for display purposes">Display Order</th>
-            <td>{{ account.display_order if account.display_order is not none else '—' }}</td>
-        </tr>
-        <tr>
-            <th title="The financial statement this account appears on">Statement</th>
-            <td>{{ account.statement or '—' }}</td>
-        </tr>
-        <tr>
-            <th title="Optional internal comment or note">Comment</th>
-            <td>{{ account.comment or '—' }}</td>
-        </tr>
-        <tr>
-            <th title="Whether this account is currently active or inactive">Status</th>
-            <td>
-                {% if account.is_active == 1 %}
-                    <span class="status-active">Active</span>
-                {% else %}
-                    <span class="status-inactive">Inactive</span>
-                {% endif %}
-            </td>
-        </tr>
-    </table>
-
-    <div class="action-bar">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0">
+            <i class="bi bi-card-text me-2"></i>{{ account.account_name }}
+        </h4>
+        <span class="text-muted small">Account #{{ account.account_number }}</span>
+    </div>
+    <div class="d-flex gap-2">
         {% if current_user.role.role_name == 'ROLE_ADMIN' %}
         <a href="{{ url_for('account_edit', account_id=account.account_id) }}"
-           title="Edit this account's details">
-            <button title="Edit account">Edit</button>
+           class="btn btn-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Edit
         </a>
-
         {% if account.is_active == 1 %}
         <form method="POST"
               action="{{ url_for('account_deactivate', account_id=account.account_id) }}"
-              style="display:inline;"
               onsubmit="return confirm('Deactivate this account? This requires a zero balance.');">
-            <button type="submit" class="btn-danger"
-                    title="Deactivate this account (only allowed when balance is zero)">
-                Deactivate
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-slash-circle me-1"></i>Deactivate
             </button>
         </form>
         {% endif %}
         {% endif %}
-
         <a href="{{ url_for('account_ledger', account_id=account.account_id) }}"
-           title="View the transaction ledger for this account">
-            <button class="btn-secondary" title="View ledger">View Ledger</button>
+           class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-card-list me-1"></i>View Ledger
         </a>
-
-        <a href="{{ url_for('accounts') }}"
-           title="Return to the full chart of accounts">
-            ← Back to Chart of Accounts
+        {% if current_user.role.role_name in ['ROLE_ACCOUNTANT', 'ROLE_MANAGER', 'ROLE_ADMIN'] %}
+        <a href="{{ url_for('accounts_send_email', account_id=account.account_id) }}"
+           class="btn btn-outline-secondary btn-sm"
+           title="Send email to manager or administrator about this account">
+            <i class="bi bi-envelope me-1"></i>Send Email
+        </a>
+        {% endif %}
+        <a href="{{ url_for('accounts') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back
         </a>
     </div>
 </div>
+
+<div class="row g-4">
+
+    <!-- Left column: identity + balances -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header-primary"><i class="bi bi-info-circle me-2"></i>Account Info</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal w-45" style="width:45%;">Account Name</th>
+                            <td class="fw-semibold">{{ account.account_name }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Account Number</th>
+                            <td class="font-monospace">{{ account.account_number }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Category</th>
+                            <td>{{ account.category }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Subcategory</th>
+                            <td>{{ account.subcategory or '—' }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Normal Side</th>
+                            <td>{{ account.normal_side }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Statement</th>
+                            <td>
+                                {% if account.statement %}
+                                    <span class="badge bg-primary bg-opacity-75">{{ account.statement }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Status</th>
+                            <td>
+                                {% if account.is_active == 1 %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Created</th>
+                            <td class="small">{{ account.created_at.strftime('%Y-%m-%d %H:%M') if account.created_at else '—' }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Created By</th>
+                            <td>
+                                {% if account.creator %}
+                                    {{ account.creator.first_name }} {{ account.creator.last_name }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% if account.comment %}
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Comment</th>
+                            <td class="small fst-italic">{{ account.comment }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if account.description %}
+                        <tr>
+                            <th class="ps-3 text-muted fw-normal">Description</th>
+                            <td class="small">{{ account.description }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: balance summary cards -->
+    <div class="col-md-6">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="card text-center border-0" style="background:#1a2942; color:#fff; border-radius:10px;">
+                    <div class="card-body py-4">
+                        <div class="small mb-1 opacity-75">Current Balance</div>
+                        <div class="display-6 fw-bold font-monospace">
+                            ${{ account.current_balance | currency }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small mb-1">Initial Balance</div>
+                        <div class="fw-semibold font-monospace">{{ account.initial_balance | currency }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small mb-1">Display Order</div>
+                        <div class="fw-semibold">{{ account.display_order if account.display_order is not none else '—' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small mb-1">Total Debits</div>
+                        <div class="fw-semibold font-monospace text-primary">{{ account.debit_total | currency }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small mb-1">Total Credits</div>
+                        <div class="fw-semibold font-monospace text-success">{{ account.credit_total | currency }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

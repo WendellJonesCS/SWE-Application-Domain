@@ -1,77 +1,89 @@
 {% extends "layout.html" %}
-{% block title %}Send Email - {{ account.account_name }} - LockBook{% endblock %}
+{% block title %}Account Event Log - LockBook{% endblock %}
+
 {% block body %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">
-        <i class="bi bi-envelope me-2"></i>Send Email
-        <span class="text-muted fw-normal fs-5 ms-2">re: {{ account.account_name }}</span>
-    </h4>
-    <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
-       class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Back
+    <h4 class="mb-0"><i class="bi bi-clock-history me-2"></i>Account Event Log</h4>
+    <a href="{{ url_for('accounts') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Chart of Accounts
     </a>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-7 col-xl-6">
-
-        <!-- Account context -->
-        <div class="card mb-4">
-            <div class="card-header-primary"><i class="bi bi-list-columns me-2"></i>Account</div>
-            <div class="card-body py-3">
-                <div class="row g-2 small">
-                    <div class="col-4 text-muted">Account Name</div>
-                    <div class="col-8 fw-semibold">{{ account.account_name }}</div>
-                    <div class="col-4 text-muted">Account #</div>
-                    <div class="col-8 font-monospace">{{ account.account_number }}</div>
-                    <div class="col-4 text-muted">Balance</div>
-                    <div class="col-8 font-monospace">{{ account.current_balance | currency }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Compose -->
-        <div class="card">
-            <div class="card-header-primary"><i class="bi bi-pencil me-2"></i>Compose Message</div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Send To <span class="text-danger">*</span>
-                        </label>
-                        <select name="recipient_type" class="form-select" required>
-                            <option value="">— Select Recipient —</option>
-                            <option value="manager">All Managers</option>
-                            <option value="accountant">All Accountants</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Subject <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" name="subject" class="form-control"
-                               placeholder="e.g. Question about {{ account.account_name }}" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">
-                            Message <span class="text-danger">*</span>
-                        </label>
-                        <textarea name="message" class="form-control" rows="6"
-                                  placeholder="Write your message here…" required></textarea>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send me-1"></i>Send
-                        </button>
-                        <a href="{{ url_for('account_detail', account_id=account.account_id) }}"
-                           class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-
+{% if logs %}
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Account</th>
+                    <th>User</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="small text-muted font-monospace">
+                        {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '—' }}
+                    </td>
+                    <td>
+                        {% if log.action == 'CREATE' %}
+                            <span class="badge bg-success">CREATE</span>
+                        {% elif log.action == 'UPDATE' %}
+                            <span class="badge bg-warning text-dark">UPDATE</span>
+                        {% elif log.action == 'DEACTIVATE' %}
+                            <span class="badge bg-danger">DEACTIVATE</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ log.account.account_name }}</span>
+                        <br>
+                        <span class="text-muted small font-monospace">#{{ log.account.account_number }}</span>
+                    </td>
+                    <td class="small">{{ log.user.username }}</td>
+                    <td>
+                        {% if log.before_image %}
+                        <span class="font-monospace small text-muted d-inline-block"
+                              style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                              title="{{ log.before_image }}">
+                            {{ log.before_image[:80] }}{% if log.before_image|length > 80 %}…{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.after_image %}
+                        <span class="font-monospace small text-muted d-inline-block"
+                              style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                              title="{{ log.after_image }}">
+                            {{ log.after_image[:80] }}{% if log.after_image|length > 80 %}…{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+        <h5>No events recorded yet</h5>
+        <p class="mb-0 small">Account activity will appear here once accounts are created or modified.</p>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

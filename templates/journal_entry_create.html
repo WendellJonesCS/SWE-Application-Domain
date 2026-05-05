@@ -1,0 +1,285 @@
+{% extends "layout.html" %}
+{% block title %}Create Journal Entry - LockBook{% endblock %}
+{% block body %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-journal-plus me-2"></i>Create Journal Entry</h4>
+    <a href="{{ url_for('journal_entries') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header-primary">New Entry</div>
+    <div class="card-body">
+        <form method="POST" id="entry-form" enctype="multipart/form-data">
+
+            <!-- Server reads this to know how many lines exist -->
+            <input type="hidden" name="line_count" id="line_count" value="2">
+            <!-- "draft" or "submit" — set by whichever button is clicked -->
+            <input type="hidden" name="action" id="form-action" value="submit">
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                    <input type="date" name="entry_date" class="form-control" required
+                           value="{{ entry_date or '' }}">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold">Description</label>
+                    <input type="text" name="description" class="form-control"
+                           placeholder="Brief description of this entry"
+                           value="{{ description or '' }}">
+                </div>
+            </div>
+
+            <!-- Column headers -->
+            <div class="row g-2 mb-1 d-none d-md-flex px-1">
+                <div class="col-md-1">
+                    <span class="small fw-semibold text-muted text-uppercase" style="font-size:.72rem;">Type</span>
+                </div>
+                <div class="col-md-4">
+                    <span class="small fw-semibold text-muted text-uppercase" style="font-size:.72rem;">Account</span>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="small fw-semibold text-muted text-uppercase" style="font-size:.72rem;">Amount</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="small fw-semibold text-muted text-uppercase" style="font-size:.72rem;">Note</span>
+                </div>
+            </div>
+
+            <div id="lines-container">
+                <!-- 2 initial lines: first is Debit, second is Credit -->
+                {% set init_types = ['Debit', 'Credit'] %}
+                {% for i in range(2) %}
+                <div class="row g-2 mb-2 line-row align-items-center" data-index="{{ i }}">
+                    <div class="col-md-1">
+                        <select name="type_{{ i }}" class="form-select form-select-sm line-type"
+                                onchange="updateAmountFields(this)">
+                            <option value="Debit"  {% if init_types[i] == 'Debit'  %}selected{% endif %}>Dr</option>
+                            <option value="Credit" {% if init_types[i] == 'Credit' %}selected{% endif %}>Cr</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="account_id_{{ i }}" class="form-select form-select-sm">
+                            <option value="">— Select Account —</option>
+                            {% for acc in accounts %}
+                            <option value="{{ acc.account_id }}"
+                                {% if lines and lines|length > i and lines[i].account_id == acc.account_id %}selected{% endif %}>
+                                {{ acc.account_number }} — {{ acc.account_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <!-- debit field (hidden when type=Credit) -->
+                        <input type="number" step="0.01" min="0" name="debit_{{ i }}"
+                               class="form-control form-control-sm text-end debit-field" placeholder="0.00"
+                               style="{{ 'display:none;' if init_types[i] == 'Credit' else '' }}"
+                               value="{{ lines[i].debit if lines and lines|length > i and lines[i].debit else '' }}">
+                        <!-- credit field (hidden when type=Debit) -->
+                        <input type="number" step="0.01" min="0" name="credit_{{ i }}"
+                               class="form-control form-control-sm text-end credit-field" placeholder="0.00"
+                               style="{{ 'display:none;' if init_types[i] == 'Debit' else '' }}"
+                               value="{{ lines[i].credit if lines and lines|length > i and lines[i].credit else '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="line_description_{{ i }}"
+                               class="form-control form-control-sm" placeholder="Note (optional)"
+                               value="{{ lines[i].description if lines and lines|length > i else '' }}">
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <!-- first two lines cannot be removed -->
+                        <span class="text-muted small">{{ init_types[i] }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" id="add-debit" class="btn btn-outline-primary btn-sm mt-1">
+                <i class="bi bi-plus-lg me-1"></i>Add Debit Line
+            </button>
+            <button type="button" id="add-credit" class="btn btn-outline-secondary btn-sm mt-1 ms-1">
+                <i class="bi bi-plus-lg me-1"></i>Add Credit Line
+            </button>
+
+            <!-- Running totals -->
+            <div class="row justify-content-end mt-3 mb-4">
+                <div class="col-md-4">
+                    <table class="table table-sm mb-0 border rounded">
+                        <tr>
+                            <td class="fw-semibold ps-3">Total Debits</td>
+                            <td class="text-end font-monospace pe-3" id="total-debit">0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold ps-3">Total Credits</td>
+                            <td class="text-end font-monospace pe-3" id="total-credit">0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold ps-3">Difference</td>
+                            <td class="text-end font-monospace fw-bold pe-3" id="balance-diff">0.00</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attachments (Req 22) -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-paperclip me-1"></i>Source Documents
+                    <span class="text-muted fw-normal small ms-1">(PDF, Word, Excel, CSV, JPG, PNG — optional)</span>
+                </label>
+                <input type="file" name="attachments" id="attachments"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
+                       multiple>
+                <div class="form-text">Select one or more files to attach as source documents.</div>
+            </div>
+
+            <!-- Action buttons (Req 23 & 24) -->
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-primary" id="btn-submit"
+                        onclick="document.getElementById('form-action').value='submit'">
+                    <i class="bi bi-send me-1"></i>Submit for Approval
+                </button>
+                <button type="submit" class="btn btn-outline-secondary" id="btn-draft"
+                        onclick="document.getElementById('form-action').value='draft'">
+                    <i class="bi bi-floppy me-1"></i>Save as Draft
+                </button>
+                <button type="button" class="btn btn-outline-warning" id="btn-reset"
+                        onclick="resetForm()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                </button>
+                <a href="{{ url_for('journal_entries') }}" class="btn btn-outline-danger">
+                    <i class="bi bi-x-lg me-1"></i>Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let lineCount = 2;
+
+    function syncLineCount() {
+        document.getElementById('line_count').value = lineCount;
+    }
+
+    // Show/hide debit or credit amount field based on type selector
+    function updateAmountFields(selectEl) {
+        const row = selectEl.closest('.line-row');
+        const isDebit = selectEl.value === 'Debit';
+        const debitField  = row.querySelector('.debit-field');
+        const creditField = row.querySelector('.credit-field');
+        if (isDebit) {
+            debitField.style.display  = '';
+            creditField.style.display = 'none';
+            creditField.value = '';
+        } else {
+            debitField.style.display  = 'none';
+            creditField.style.display = '';
+            debitField.value = '';
+        }
+        recalc();
+    }
+
+    function recalc() {
+        let debits = 0, credits = 0;
+        document.querySelectorAll('.debit-field').forEach(el => {
+            if (el.style.display !== 'none') debits += parseFloat(el.value) || 0;
+        });
+        document.querySelectorAll('.credit-field').forEach(el => {
+            if (el.style.display !== 'none') credits += parseFloat(el.value) || 0;
+        });
+
+        const fmt = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('total-debit').textContent  = fmt(debits);
+        document.getElementById('total-credit').textContent = fmt(credits);
+
+        const diff   = Math.abs(debits - credits);
+        const diffEl = document.getElementById('balance-diff');
+        diffEl.textContent = fmt(diff);
+        diffEl.className   = 'text-end font-monospace fw-bold pe-3 ' + (diff < 0.005 ? 'text-success' : 'text-danger');
+    }
+
+    function buildLine(i, defaultType) {
+        const accountOptions = document.querySelector('[name="account_id_0"]').innerHTML;
+        const isDebit = defaultType === 'Debit';
+        return `
+            <div class="row g-2 mb-2 line-row align-items-center" data-index="${i}">
+                <div class="col-md-1">
+                    <select name="type_${i}" class="form-select form-select-sm line-type"
+                            onchange="updateAmountFields(this)">
+                        <option value="Debit"  ${isDebit  ? 'selected' : ''}>Dr</option>
+                        <option value="Credit" ${!isDebit ? 'selected' : ''}>Cr</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select name="account_id_${i}" class="form-select form-select-sm">
+                        ${accountOptions}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="0.01" min="0" name="debit_${i}"
+                           class="form-control form-control-sm text-end debit-field" placeholder="0.00"
+                           style="${isDebit ? '' : 'display:none;'}">
+                    <input type="number" step="0.01" min="0" name="credit_${i}"
+                           class="form-control form-control-sm text-end credit-field" placeholder="0.00"
+                           style="${!isDebit ? '' : 'display:none;'}">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="line_description_${i}"
+                           class="form-control form-control-sm" placeholder="Note (optional)">
+                </div>
+                <div class="col-md-2 text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-line" title="Remove line">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    function addLine(type) {
+        const i = lineCount++;
+        syncLineCount();
+        const container = document.getElementById('lines-container');
+        const tmp = document.createElement('div');
+        tmp.innerHTML = buildLine(i, type);
+        const div = tmp.firstElementChild;
+        container.appendChild(div);
+        div.querySelector('.remove-line').addEventListener('click', () => { div.remove(); recalc(); });
+        div.addEventListener('input', recalc);
+    }
+
+    document.getElementById('add-debit').addEventListener('click',  () => addLine('Debit'));
+    document.getElementById('add-credit').addEventListener('click', () => addLine('Credit'));
+    document.getElementById('lines-container').addEventListener('input', recalc);
+
+    function resetForm() {
+        if (!confirm('Reset the form? All entered data will be cleared.')) return;
+        document.getElementById('entry-form').reset();
+        // Remove any extra lines beyond the initial 2
+        const rows = document.querySelectorAll('.line-row');
+        rows.forEach((row, idx) => { if (idx >= 2) row.remove(); });
+        lineCount = 2;
+        syncLineCount();
+        // Restore initial type visibility
+        document.querySelectorAll('.line-row').forEach((row, idx) => {
+            const sel = row.querySelector('.line-type');
+            if (sel) {
+                sel.value = idx === 0 ? 'Debit' : 'Credit';
+                updateAmountFields(sel);
+            }
+        });
+        recalc();
+    }
+
+    recalc();
+    syncLineCount();
+</script>
+{% endblock %}
